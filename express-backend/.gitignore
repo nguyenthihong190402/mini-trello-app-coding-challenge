@@ -1,0 +1,8 @@
+#Enviroment variable
+.env
+
+#Node
+node_modules
+
+#Firebase
+express-backend\src\config\serviceAccountKey.json
