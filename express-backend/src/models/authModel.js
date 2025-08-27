@@ -1,10 +1,18 @@
 const db = require("../config/firebase-config");
-
 const userCollection = db.collection("users");
 
-async function getAllUser() {
-    const data = await userCollection.get();
-    return data.docs.map((value) => ({id: value.id, ...value.data()}))
+async function createUser(user) {
+  const newUser = await userCollection.add(user);
+  return { id: newUser.id, ...user };
 }
 
-module.exports = {getAllUser}
+async function findUserByEmail(email) {
+  const user = await userCollection.where("email", "==", email).get();
+  if (user.empty) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+module.exports = { createUser, findUserByEmail };

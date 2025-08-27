@@ -6,7 +6,8 @@ app.use(cors());
 app.use(express.json());
 
 const userRoutes = require("./routes/authRouter");
+app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/users", userRoutes);
+app.use("/auth", userRoutes);
 
 module.exports = app;
