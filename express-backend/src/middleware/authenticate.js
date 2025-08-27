@@ -1,17 +1,20 @@
 const jwtToken = require("jsonwebtoken");
+
 require("dotenv").config();
 async function authenticate(req, res, next) {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  if (!token) {
+  if (!authHeader && authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "No token provided" });
   }
-  const user = getUserFromToken(token);
+  const token = authHeader.split(" ")[1];  
+  const user =await getUserFromToken(token);
+  
   if (!user) {
     return res.status(403).json({ error: "Invalid or expire token" });
   }
   req.user = user;
   next();
+  
 }
 
 async function getUserFromToken(token) {
@@ -23,4 +26,4 @@ async function getUserFromToken(token) {
   }
 }
 
-module.exports = {authenticate, getUserFromToken};
+module.exports = { authenticate, getUserFromToken };

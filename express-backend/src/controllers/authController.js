@@ -1,4 +1,5 @@
 const AuthService = require("../services/authService");
+const AuthModel = require("../models/authModel");
 
 const createUser = async (req, res) => {
   const { email, verificationCode } = req.body;
@@ -64,4 +65,21 @@ async function login(req, res) {
   }
 }
 
-module.exports = { createUser, sendOtp, checkEmail, login };
+async function getUserByEmail(req, res) {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      return res
+        .status(400)
+        .json({ message: "Email or Verify Code is require " });
+    } else {
+      const accessToken = await AuthModel.getUserByEmail(email);
+      return res.status(200).json(accessToken);
+    }
+  } catch (error) {
+    return res
+      .status(401)
+      .json({ error: "Invalid email or verification code" });
+  }
+}
+module.exports = { createUser, sendOtp, checkEmail, login ,getUserByEmail};

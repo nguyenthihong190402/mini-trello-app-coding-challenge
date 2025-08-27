@@ -9,4 +9,4 @@ firebaseAdmin.initializeApp({
 });
 
 const db = firebaseAdmin.firestore();
-module.exports = db;
+module.exports = {db, firebaseAdmin};
