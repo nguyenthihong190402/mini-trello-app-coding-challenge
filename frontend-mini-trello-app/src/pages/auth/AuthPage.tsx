@@ -1,83 +1,94 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import logo from "../../assets/image/logo.png";
+import { Button, Card, Input, Spin } from "antd";
 import imgleft from "../../assets/image/imgleft.png";
 import imgright from "../../assets/image/imgright.png";
-import { Button, Card, Input, Spin } from "antd";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
 import React, { useCallback, useState } from "react";
-import { isEmail } from "@utils/ValidateUtil";
+import { isBlank, isCode } from "@utils/ValidateUtil";
 import AuthService from "@services/AuthService";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { setEmail } from "../../redux/userSlice";
-import { AUTH_PAGE } from "../../contants/Page";
-import axios from "axios";
+import { HOME_PAGE, LOGIN_PAGE } from "../../contants/Page";
 import { toast } from "react-toastify";
-export default function LoginPage() {
-  const [emailSend, setEmailSend] = useState("");
+import axios from "axios";
+export default function AuthPage() {
+  const email = useSelector((state: RootState) => state.user.email);
+  const [verifycationCode, setVerifycationCode] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [loading, setLoading] = useState(false);
-  const [emailError, setEmailError] = useState("");
-  const dispatch = useDispatch();
-  const handleChangeEmail = useCallback(
+  const navigate = useNavigate();
+  const handleChangeVerifycationCode = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
-      setEmailSend(value);
-      if (!isEmail(value)) {
-        setEmailError("Email not format");
+      setVerifycationCode(value);
+      if (isBlank(value)) {
+        setErrorCode("Code is require");
+      }
+      if (!isCode(value)) {
+        setErrorCode("Enter the 6 digit number sent to your email");
       } else {
-        setEmailError("");
+        setErrorCode("");
       }
     },
-    [emailSend]
+    [verifycationCode]
   );
-  const navigate = useNavigate();
+
   const onSubmit = async () => {
     const payload = {
-      email: emailSend,
+      email: email,
+      verificationCode: verifycationCode,
     };
-    if (emailSend !== "") {
-      setLoading(true);
+    if (verifycationCode !== "") {
+        setLoading(true)
       try {
-        await AuthService.sendEmail(payload);
+        const existingEmail = await AuthService.checkEmail({ email: email });
+        if (existingEmail.exist) {
+          const data = await AuthService.loginApi(payload);
+          localStorage.setItem("authToken", data.accessToken);
+          navigate(HOME_PAGE);
+          toast.success("Login successfull");
+        } else {
+          await AuthService.register(payload);
+          navigate(LOGIN_PAGE);
+          toast.success(
+            "You have successfully created an account. Now start logging in."
+          );
+        }
         setLoading(false);
-        dispatch(setEmail(emailSend));
-        navigate(AUTH_PAGE);
       } catch (error) {
         if (axios.isAxiosError(error)) {
           console.error("Error:", error.response?.data || error.message);
-        } else {
-          console.error("Unexpected error", error);
         }
       }
     } else {
-      toast.error("Please enter email");
+      toast.error("Please enter verifycation code");
     }
   };
-
   return (
     <div className="relative flex justify-center items-center h-screen">
       <Card className="content w-[351px] h-[311px] bg-[#fffeff] rounded-2xl shadow-[0px_0px_2px_0px_#171a1f33]">
         <div className="flex justify-center">
-          <img className="w-[56px] h-[55px]" src={logo} alt="Logo" />
+          <h3>Email Verification </h3>
         </div>
         <p className="text-[#29354F] font-normal font-[Catamaran] text-[11px] leading-[18px] text-center tracking-[0%] mt-[20px]">
-          Log in to continue
+          Please enter your code that send to your email address
         </p>
         <div className="flex flex-col mb-4">
           <Input
-            type="email"
-            value={emailSend}
-            placeholder="Enter your email"
+            type="text"
+            value={verifycationCode}
+            placeholder="Enter code verifycation"
             className="w-[238px] h-[38px] text-center !rounded-sm !border-[1.5px] !border-solid !border-[#565D6D] font-[Catamaran] text-[12px] leading-[19px]"
-            onChange={handleChangeEmail}
+            onChange={handleChangeVerifycationCode}
           />
-          {emailError && <p className="text-red-700">{emailError}</p>}
+          {errorCode && <p className="text-red-700">{errorCode}</p>}
           <Button
             type="primary"
             className="!w-[302px] !h-[38px] !bg-[#0E50E1] !mt-1 !rounded-sm leading-[17px] text-[10px]
             active:scale-95 transition duration-200 "
             onClick={onSubmit}
           >
-            Continue
+            Submit
           </Button>
           <div
             className="flex justify-center items-center"
