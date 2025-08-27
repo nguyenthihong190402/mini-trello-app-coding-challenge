@@ -62,15 +62,20 @@ async function login(email, code) {
   }
   const verify = await verificationCode(email, code);
   if (verify) {
-    return generateToken(email, code);
+    const user = await AuthModel.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const accessToken = await generateToken(email, code, user.id);
+    return accessToken;
   } else {
     throw new Error("Please verification code");
   }
 }
 
-async function generateToken(email, code) {
+async function generateToken(email, code, userId) {
   const token = jwtToken.sign(
-    { email: email, code: code },
+    { email: email, code: code, userId: userId },
     process.env.JWT_SECRET,
     { expiresIn: process.env.EXPIRES_IN }
   );
